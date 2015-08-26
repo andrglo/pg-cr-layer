@@ -106,19 +106,29 @@ PgCrLayer.prototype.execute = function(statement, params, options) {
  */
 PgCrLayer.prototype.query = function(statement, params, options) {
   debug('QUERY:', statement, params);
-  if (typeof params === 'object' && !Array.isArray(params)) {
-    var match = /(@\w*\b)/g.exec(statement);
-    var paramsArray = [];
-    for (var i = 1; i < match.length; i++) {
-      var name = match[i];
-      paramsArray.push(params[name.substr(1)]);
-      statement = statement.replace(name, '$' + i);
+
+  var convertParams = function() {
+    if (params !== null && typeof params === 'object' && !Array.isArray(params)) {
+      var match = statement.match(/(@\w*\b)/g);
+      assert(Array.isArray(match), 'No parameter is defined in statement');
+      assert(match.length === Object.keys(params).length, 'Parameters in statement ' +
+        'not match parameters in object params');
+      debug(match);
+      var i = 1;
+      params = match.map(function(param) {
+        statement = statement.replace(param, '$' + i);
+        i++;
+        var key = param.substr(1);
+        assert(params[key], 'Parameter ' + param + ' not found in object params');
+        return params[key];
+      });
       debug('params converted', statement, params);
     }
-    params = paramsArray;
-  }
+  };
+
   if (options && options.transaction) {
     return new Promise(function(resolve, reject) {
+      convertParams();
       options.transaction.query(statement, params, function(err, result) {
         if (err) return reject(err);
         debug('ROWS:', result.rows);
@@ -128,6 +138,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
   } else {
     var config = this.config;
     return new Promise(function(resolve, reject) {
+      convertParams();
       pg.connect(config, function(err, client, done) {
         if (err) return reject(err);
         client.query(statement, params, function(err, result) {
