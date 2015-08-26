@@ -14,7 +14,8 @@ module.exports = PgCrLayer;
  * pool: {
  *   max: <max pool size>,
  *   idleTimeout: <idle timeout in milliseconds>
- * }
+ * },
+ * native: <boolean>
  *
  * @returns {PgCrLayer}
  * @constructor
@@ -23,6 +24,9 @@ module.exports = PgCrLayer;
 function PgCrLayer(config) {
   if (!(this instanceof PgCrLayer)) {
     return new PgCrLayer(config);
+  }
+  if (config.native === true) {
+    pg = pg.native;
   }
   this.config = {
     user: config.user || pg.defaults.user,
