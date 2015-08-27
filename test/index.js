@@ -276,6 +276,9 @@ describe('postgres cr layer', function() {
       .then(function(recordset) {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(5);
+        var record = recordset[0];
+        expect(record.product_no).to.be.a('number');
+        expect(record.price).to.be.a('string');
         done();
       })
       .catch(done);
@@ -333,7 +336,7 @@ describe('postgres cr layer', function() {
       'price numeric,' +
       'lastSale date,' +
       'createdAt timestamp with time zone,' +
-      'test timestamp )')
+      'updatedAt timestamp)')
       .then(function(res) {
         expect(res).to.be.a('array');
         expect(res.length).to.equal(0);
@@ -341,12 +344,48 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
-  it('should insert date and time as defined in ES6', function(done) {
+  var now = new Date();
+  it('should insert date and time', function(done) {
     layer2.execute('INSERT INTO products ' +
       'VALUES ($1, $2, $3, $4, $5, $6)', [1, 'Cheese', 59.99,
-      '2013-12-31',
-      '2013-12-31',
-      '2013-12-31'])  //todo https://github.com/brianc/node-pg-types
+      now,
+      now,
+      now])
+      .then(function() {
+        return layer2.execute('INSERT INTO products ' +
+          'VALUES ($1, $2, $3, $4, $5, $6)', [2, 'Pasta', 49.99,
+          '2014-12-31',
+          '2014-12-31T00:00:00Z',
+          new Date('2014-12-31T00:00:00')])
+      })
+      .then(function() {
+        return layer2.execute('INSERT INTO products ' +
+          'VALUES ($1, $2, $3, $4, $5, $6)', [2, 'Pasta', 49.99,
+          '2015-01-01',
+          '2015-01-01T00:00:00-01:00',
+          new Date('2014-12-31T23:00:00')])
+      })
+      .then(function() {
+        return layer2.execute('INSERT INTO products ' +
+          'VALUES ($1, $2, $3, $4, $5, $6)', [2, 'Pasta', 49.99,
+          '2015-01-02',
+          '2015-01-01T00:00:00+01:00',
+          new Date('2015-01-01T01:00:00')])
+      })
+      .then(function() {
+        return layer2.execute('INSERT INTO products ' +
+          'VALUES ($1, $2, $3, $4, $5, $6)', [2, 'Pasta', 49.99,
+          '2015-01-03',
+          '2015-01-01T00:00:00+02:00',
+          new Date('2015-01-01T02:00:00')])
+      })
+      .then(function() {
+        return layer2.execute('INSERT INTO products ' +
+          'VALUES ($1, $2, $3, $4, $5, $6)', [2, 'Pasta', 49.99,
+          '2015-01-04',
+          '2015-01-01T00:00:00-02:00',
+          new Date('2014-12-31T22:00:00')])
+      })
       .then(function(res) {
         expect(res).to.be.a('array');
         expect(res.length).to.equal(0);
@@ -354,16 +393,72 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
-  it('lets check', function(done) {
-    layer2.query('SELECT * FROM products')
+  it('lets check the data', function(done) {
+    layer2.query('SELECT * FROM products ORDER BY lastSale')
       .then(function(recordset) {
         expect(recordset).to.be.a('array');
-        expect(recordset.length).to.equal(1);
-        log(recordset);
+        expect(recordset.length).to.equal(6);
         var record = recordset[0];
-        log(record.lastsale.toISOString());
-        log(record.createdat.toISOString());
-        log(record.test.toISOString());
+        expect(record.lastsale).to.be.a('Date');
+        expect(record.createdat).to.be.a('Date');
+        expect(record.updatedat).to.be.a('Date');
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2014-12-31');
+        expect(record.createdat.toISOString()).to.equal('2014-12-31T00:00:00.000Z');
+        expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T00:00:00')).toISOString());
+        record = recordset[1];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-01');
+        expect(record.createdat.toISOString()).to.equal('2015-01-01T01:00:00.000Z');
+        expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T23:00:00')).toISOString());
+        record = recordset[2];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-02');
+        expect(record.createdat.toISOString()).to.equal('2014-12-31T23:00:00.000Z');
+        expect(record.updatedat.toISOString()).to.equal((new Date('2015-01-01T01:00:00')).toISOString());
+        record = recordset[3];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-03');
+        expect(record.createdat.toISOString()).to.equal('2014-12-31T22:00:00.000Z');
+        expect(record.updatedat.toISOString()).to.equal((new Date('2015-01-01T02:00:00')).toISOString());
+        record = recordset[4];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-04');
+        expect(record.createdat.toISOString()).to.equal('2015-01-01T02:00:00.000Z');
+        expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T22:00:00')).toISOString());
+        record = recordset[5];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal(now.toISOString().substr(0, 10));
+        expect(record.createdat.toISOString()).to.equal(now.toISOString());
+        expect(record.updatedat.toISOString()).to.equal(now.toISOString());
+        done();
+      })
+      .catch(done);
+  });
+  it('lets check the where in a date field', function(done) {
+    layer2.query('SELECT * FROM products WHERE lastSale >= $1 ORDER BY lastSale', ['2015-01-01'])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(5);
+        var record = recordset[0];
+        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-01');
+        done();
+      })
+      .catch(done);
+  });
+  it('lets check the where in a datetime field with time zone', function(done) {
+    layer2.query('SELECT * FROM products WHERE createdAt >= $1 ORDER BY createdAt', ['2014-12-31T23:00:00.000Z'])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(4);
+        var record = recordset[0];
+        expect(record.createdat.toISOString()).to.equal('2014-12-31T23:00:00.000Z');
+        done();
+      })
+      .catch(done);
+  });
+  it('lets check the where in a datetime field without time zone', function(done) {
+    layer2.query('SELECT * FROM products WHERE updatedAt >= $1 ORDER BY updatedAt',
+      [new Date('2015-01-01T00:00:00+01:00')])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(4);
+        var record = recordset[0];
+        expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T23:00:00')).toISOString());
         done();
       })
       .catch(done);
