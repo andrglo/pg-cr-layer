@@ -258,17 +258,17 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
-  it('should create more one records using object parameters in layer 1', function(done) {
+  it('should create more one record using object parameters in layer 1', function(done) {
     return layer1.execute('INSERT INTO products ' +
       'VALUES (@product_no, @name, @price)', {
       name: 'Duck',
       product_no: 5,
       price: 0.99
     }).then(function(res) {
-        expect(res).to.be.a('array');
-        expect(res.length).to.equal(0);
-        done();
-      })
+      expect(res).to.be.a('array');
+      expect(res.length).to.equal(0);
+      done();
+    })
       .catch(done);
   });
   it('products should have five records in layer 1', function(done) {
@@ -288,8 +288,8 @@ describe('postgres cr layer', function() {
       product_ref: '',
       price: 0.99
     }).then(function() {
-        done(new Error('No error?'));
-      })
+      done(new Error('No error?'));
+    })
       .catch(function(error) {
         expect(error.message.indexOf('not match parameters') !== -1).to.equal(true);
         done();
@@ -322,6 +322,48 @@ describe('postgres cr layer', function() {
     })
       .catch(function(error) {
         expect(error.message.indexOf('No parameter is defined') !== -1).to.equal(true);
+        done();
+      })
+      .catch(done);
+  });
+  it('should create a table in layer 2', function(done) {
+    layer2.execute('CREATE TABLE products ( ' +
+      'product_no integer, ' +
+      'name varchar(10), ' +
+      'price numeric,' +
+      'lastSale date,' +
+      'createdAt timestamp with time zone,' +
+      'test timestamp )')
+      .then(function(res) {
+        expect(res).to.be.a('array');
+        expect(res.length).to.equal(0);
+        done();
+      })
+      .catch(done);
+  });
+  it('should insert date and time as defined in ES6', function(done) {
+    layer2.execute('INSERT INTO products ' +
+      'VALUES ($1, $2, $3, $4, $5, $6)', [1, 'Cheese', 59.99,
+      '2013-12-31',
+      '2013-12-31',
+      '2013-12-31'])  //todo https://github.com/brianc/node-pg-types
+      .then(function(res) {
+        expect(res).to.be.a('array');
+        expect(res.length).to.equal(0);
+        done();
+      })
+      .catch(done);
+  });
+  it('lets check', function(done) {
+    layer2.query('SELECT * FROM products')
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        log(recordset);
+        var record = recordset[0];
+        log(record.lastsale.toISOString());
+        log(record.createdat.toISOString());
+        log(record.test.toISOString());
         done();
       })
       .catch(done);
