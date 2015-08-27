@@ -10,9 +10,9 @@
     "url": "andrglo.com"
   },
   "files": [
-    "lib"
+    "src"
   ],
-  "main": "lib/index.js",
+  "main": "src/index.js",
   "keywords": [
     "postgres",
     "pg",
