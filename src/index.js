@@ -36,7 +36,7 @@ function PgCrLayer(config) {
     host: config.host || pg.defaults.host,
     poolSize: (config.pool && config.pool.max) || pg.defaults.poolSize,
     poolIdleTimeout: (config.pool && config.pool.idleTimeout) || pg.defaults.poolIdleTimeout
-  }
+  };
 }
 
 PgCrLayer.prototype.dialect = 'postgres';
@@ -152,7 +152,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       debug('params converted', statement, params);
       params = params.map(function(param) {
         return param.value || param;
-      })
+      });
     }
   };
 
