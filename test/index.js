@@ -528,6 +528,52 @@ describe('postgres cr layer', function() {
       done(error);
     })
   });
+  it('should run the usage example', function(done) {
+
+    config.database = databaseName[0];
+    var layer = new PgCrLayer(config);
+
+    layer.connect()
+      .then(function() {
+        return layer.execute('CREATE TABLE products ( ' +
+          'product_no integer, ' +
+          'name varchar(10), ' +
+          'price numeric(12,2) )');
+      })
+      .then(function() {
+        return layer.transaction(function(t) {
+          return layer
+            .execute('INSERT INTO products VALUES (1, \'Cheese\', 9.99)', null, {transaction: t})
+            .then(function() {
+              return layer
+                .execute('INSERT INTO products VALUES (2, \'Chicken\', 19.99)', null, {transaction: t})
+            })
+            .then(function() {
+              return layer
+                .execute('INSERT INTO products VALUES ($1, $2, $3)', [3, 'Duck', 0.99], {transaction: t})
+            });
+        })
+      })
+      .then(function() {
+        return layer.query('SELECT * FROM products WHERE product_no=@product_no',
+          {product_no: {value: 1, type: 'integer'}}) // or just {product_no: 1}
+          .then(function(recordset) {
+            expect(recordset).to.be.a('array');
+            expect(recordset.length).to.equal(1);
+            var record = recordset[0];
+            expect(record.product_no).to.equal(1);
+          })
+      })
+      .then(function() {
+        return layer.close();
+      })
+      .then(function() {
+        done();
+      })
+      .catch(function(error) {
+        done(error);
+      });
+  });
   after(function(done) {
     layer0.close()
       .then(function() {
