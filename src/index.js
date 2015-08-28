@@ -43,6 +43,17 @@ PgCrLayer.prototype.dialect = 'postgres';
 
 PgCrLayer.prototype.delimiters = '""';
 
+PgCrLayer.prototype.connect = function() {
+  var config = this.config;
+  return new Promise(function(resolve, reject) {
+    pg.connect(config, function(err, client, done) {
+      if (err) return reject(err);
+      done();
+      resolve();
+    });
+  });
+};
+
 /**
  * Manage a transaction
  * @param fn(transaction)
@@ -84,6 +95,16 @@ PgCrLayer.prototype.transaction = function(fn) {
       });
     });
   });
+};
+
+/**
+ * Execute a script
+ * @param script {string}
+ * @param options {object} Can contain the transaction connection
+ * @returns {Promise}
+ */
+PgCrLayer.prototype.batch = function(script, options) {
+  return this.query(script, null, options);
 };
 
 /**

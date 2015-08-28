@@ -31,9 +31,12 @@ var createDbLayer = {};
 function createPostgresDb(dbName) {
   config.database = 'postgres';
   createDbLayer[dbName] = new PgCrLayer(config); // do not close after creation
-  return createDbLayer[dbName].execute('DROP DATABASE IF EXISTS "' + dbName + '"')
+  return createDbLayer[dbName].connect()
     .then(function() {
-      return createDbLayer[dbName].execute('CREATE DATABASE "' + dbName + '"');
+      return createDbLayer[dbName].execute('DROP DATABASE IF EXISTS "' + dbName + '"')
+        .then(function() {
+          return createDbLayer[dbName].execute('CREATE DATABASE "' + dbName + '"');
+        });
     });
 }
 
@@ -57,13 +60,23 @@ describe('postgres cr layer', function() {
   var layer0;
   var layer1;
   var layer2;
-  before(function() {
+  before(function(done) {
     config.database = databaseName[0];
     layer0 = new PgCrLayer(config);
     config.database = databaseName[1];
     layer1 = new PgCrLayer(config);
     config.database = databaseName[2];
     layer2 = new PgCrLayer(config);
+    layer0.connect()
+      .then(function() {
+        return layer1.connect();
+      })
+      .then(function() {
+        return layer2.connect();
+      })
+      .then(function() {
+        done();
+      });
   });
 
   it('should create a table in layer 0', function(done) {
@@ -348,7 +361,7 @@ describe('postgres cr layer', function() {
   it('should insert date and time', function(done) {
     layer2.execute('INSERT INTO products ' +
       'VALUES ($1, $2, $3, $4, $5, $6)', [1, 'Cheese', 59.99,
-      now,
+      now.toISOString().substr(0, 10),
       now,
       now])
       .then(function() {
