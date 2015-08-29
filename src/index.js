@@ -151,7 +151,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       }
       debug('params converted', statement, params);
       params = params.map(function(param) {
-        return param.value || param;
+        return (param && param.value) || param;
       });
     }
   };

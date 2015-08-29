@@ -485,7 +485,7 @@ describe('postgres cr layer', function() {
         maxLength: 10
       },
       product_no: {
-        value: 5,
+        value: 6,
         type: 'integer'
       },
       price: {
@@ -506,11 +506,11 @@ describe('postgres cr layer', function() {
     layer1.execute('INSERT INTO products ' +
       'VALUES ($1, $2, $3)', [
       {
-        value: 5,
+        value: 7,
         type: 'integer'
       },
       {
-        value: 'Iron',
+        value: 'Gate',
         type: 'string',
         maxLength: 10
       },
@@ -527,6 +527,28 @@ describe('postgres cr layer', function() {
     }).catch(function(error) {
       done(error);
     })
+  });
+  it('should insert null if parameter is null or undefined in layer 1', function(done) {
+    layer1.execute('UPDATE products ' +
+      'SET price=$1,name=$2 WHERE product_no=$3', [null, void 0, 6]).then(function(res) {
+      expect(res).to.be.a('array');
+      expect(res.length).to.equal(0);
+      done();
+    }).catch(function(error) {
+      done(error);
+    })
+  });
+  it('lets check the if the columns are null', function(done) {
+    layer1.query('SELECT * FROM products WHERE product_no=$1', [6])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal(null);
+        expect(record.price).to.equal(null);
+        done();
+      })
+      .catch(done);
   });
   it('should run the usage example', function(done) {
 
