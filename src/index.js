@@ -151,7 +151,11 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       }
       debug('params converted', statement, params);
       params = params.map(function(param) {
-        return (param && param.value) || param;
+        if (typeof param === 'object' && !(param instanceof Date)) {
+          return param && param.value || null;
+        } else {
+          return param || null;
+        }
       });
     }
   };

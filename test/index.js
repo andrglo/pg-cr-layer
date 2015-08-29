@@ -550,6 +550,29 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
+  it('should insert null if parameter is null or undefined also in object format in layer 1', function(done) {
+    layer1.execute('UPDATE products ' +
+      'SET price=$1,name=$2 WHERE product_no=$3', [{value: null}, {}, 5])
+      .then(function(res) {
+        expect(res).to.be.a('array');
+        expect(res.length).to.equal(0);
+        done();
+      }).catch(function(error) {
+        done(error);
+      });
+  });
+  it('lets check product 5 the if the columns are null', function(done) {
+    layer1.query('SELECT * FROM products WHERE product_no=$1', [5])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal(null);
+        expect(record.price).to.equal(null);
+        done();
+      })
+      .catch(done);
+  });
   it('should run the usage example', function(done) {
 
     config.database = databaseName[0];
