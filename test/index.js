@@ -364,7 +364,7 @@ describe('postgres cr layer', function() {
     layer2.execute('CREATE TABLE products ( ' +
       'product_no integer, ' +
       'name varchar(10), ' +
-      'price numeric,' +
+      'price numeric(12, 2),' +
       'lastSale date,' +
       'createdAt timestamp with time zone,' +
       'updatedAt timestamp)')
@@ -456,6 +456,17 @@ describe('postgres cr layer', function() {
         expect(record.lastsale.toISOString().substr(0, 10)).to.equal(now.toISOString().substr(0, 10));
         expect(record.createdat.toISOString()).to.equal(now.toISOString());
         expect(record.updatedat.toISOString()).to.equal(now.toISOString());
+        done();
+      })
+      .catch(done);
+  });
+  it('lets check the numeric value', function(done) {
+    layer2.query('SELECT * FROM products ORDER BY lastSale')
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(6);
+        var record = recordset[5];
+        expect(Number(record.price)).to.equal(59.99);
         done();
       })
       .catch(done);
