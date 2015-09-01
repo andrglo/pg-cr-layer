@@ -136,18 +136,15 @@ PgCrLayer.prototype.query = function(statement, params, options) {
     if (params && params !== null) {
       if (typeof params === 'object' && !Array.isArray(params)) {
         var match = statement.match(/(@\w*\b)/g);
-        assert(Array.isArray(match), 'No parameter is defined in statement');
-        assert(match.length === Object.keys(params).length, 'Parameters in statement ' +
-          'not match parameters in object params');
         debug(match);
         var i = 1;
-        params = match.map(function(param) {
+        params = match ? match.map(function(param) {
           statement = statement.replace(param, '$' + i);
           i++;
           var key = param.substr(1);
           assert(params[key], 'Parameter ' + param + ' not found in object params');
           return params[key];
-        });
+        }) : [];
       }
       debug('params converted', statement, params);
       params = params.map(function(param) {
