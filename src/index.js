@@ -1,6 +1,5 @@
 var pg = require('pg');
 var assert = require('assert');
-var debug = require('debug')('pg-cr-layer');
 
 module.exports = PgCrLayer;
 
@@ -34,8 +33,8 @@ function PgCrLayer(config) {
     password: config.password || pg.defaults.password,
     port: config.port || pg.defaults.port,
     host: config.host || pg.defaults.host,
-    poolSize: (config.pool && config.pool.max) || pg.defaults.poolSize,
-    poolIdleTimeout: (config.pool && config.pool.idleTimeout) || pg.defaults.poolIdleTimeout
+    poolSize: config.pool && config.pool.max || pg.defaults.poolSize,
+    poolIdleTimeout: config.pool && config.pool.idleTimeout || pg.defaults.poolIdleTimeout
   };
 }
 
@@ -47,7 +46,9 @@ PgCrLayer.prototype.connect = function() {
   var config = this.config;
   return new Promise(function(resolve, reject) {
     pg.connect(config, function(err, client, done) {
-      if (err) return reject(err);
+      if (err) {
+        return reject(err);
+      }
       done();
       resolve();
     });
@@ -66,12 +67,12 @@ PgCrLayer.prototype.transaction = function(fn) {
   var config = this.config;
   return new Promise(function(resolve, reject) {
     pg.connect(config, function(err, client, done) {
-      if (err) return reject(err);
+      if (err) {
+        return reject(err);
+      }
       client.query('BEGIN', function(err) {
-        debug('BEGIN RESULT:', err);
         if (err) {
           client.query('ROLLBACK', function(err) {
-            debug('ROLLBACK RESULT:', err);
             done(err);
             reject(err);
           });
@@ -80,14 +81,12 @@ PgCrLayer.prototype.transaction = function(fn) {
         fn(client)
           .then(function(res) {
             client.query('COMMIT', function(err) {
-              debug('COMMIT RESULT:', err);
               done(err);
               resolve(res);
             });
           })
           .catch(function(fnError) {
             client.query('ROLLBACK', function(err) {
-              debug('ROLLBACK RESULT:', err);
               done(err);
               reject(fnError);
             });
@@ -130,13 +129,11 @@ PgCrLayer.prototype.execute = function(statement, params, options) {
  * @returns {Promise}
  */
 PgCrLayer.prototype.query = function(statement, params, options) {
-  debug('QUERY:', statement, params);
 
   var convertParams = function() {
     if (params && params !== null) {
       if (typeof params === 'object' && !Array.isArray(params)) {
         var match = statement.match(/(@\w*\b)/g);
-        debug(match);
         var i = 1;
         params = match ? match.map(function(param) {
           statement = statement.replace(param, '$' + i);
@@ -146,7 +143,6 @@ PgCrLayer.prototype.query = function(statement, params, options) {
           return params[key];
         }) : [];
       }
-      debug('params converted', statement, params);
       params = params.map(function(param) {
         if (typeof param === 'object' && !(param instanceof Date)) {
           return param && param.value || null;
@@ -161,8 +157,9 @@ PgCrLayer.prototype.query = function(statement, params, options) {
     return new Promise(function(resolve, reject) {
       convertParams();
       options.transaction.query(statement, params, function(err, result) {
-        if (err) return reject(err);
-        debug('ROWS:', result.rows);
+        if (err) {
+          return reject(err);
+        }
         resolve(result.rows);
       });
     });
@@ -171,7 +168,9 @@ PgCrLayer.prototype.query = function(statement, params, options) {
     return new Promise(function(resolve, reject) {
       convertParams();
       pg.connect(config, function(err, client, done) {
-        if (err) return reject(err);
+        if (err) {
+          return reject(err);
+        }
         client.query(statement, params, function(err, result) {
           if (err) {
             done();
@@ -179,7 +178,6 @@ PgCrLayer.prototype.query = function(statement, params, options) {
             return;
           }
           done();
-          debug('ROWS:', result.rows);
           resolve(result.rows);
         });
       });
