@@ -602,6 +602,51 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
+  it('should insert 0/\'\' if parameter is 0/\'\' in layer 1', function(done) {
+    layer1.execute('UPDATE products ' +
+      'SET price=$1,name=$2 WHERE product_no=$3', [0, '', 6]).then(function(res) {
+      expect(res).to.be.a('array');
+      expect(res.length).to.equal(0);
+      done();
+    }).catch(function(error) {
+      done(error);
+    })
+  });
+  it('lets check the if the columns are 0/\'\'', function(done) {
+    layer1.query('SELECT * FROM products WHERE product_no=$1', [6])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal('');
+        expect(record.price).to.equal('0');
+        done();
+      })
+      .catch(done);
+  });
+  it('should insert 0/\'\' if parameter is 0/\'\' also in object format in layer 1', function(done) {
+    layer1.execute('UPDATE products ' +
+        'SET price=$1,name=$2 WHERE product_no=$3', [{value: 0}, {value: ''}, 5])
+      .then(function(res) {
+        expect(res).to.be.a('array');
+        expect(res.length).to.equal(0);
+        done();
+      }).catch(function(error) {
+      done(error);
+    });
+  });
+  it('lets check product 5 the if the columns are 0/\'\'', function(done) {
+    layer1.query('SELECT * FROM products WHERE product_no=$1', [5])
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal('');
+        expect(record.price).to.equal('0');
+        done();
+      })
+      .catch(done);
+  });
   it('should run the usage example', function(done) {
 
     config.database = databaseName[0];

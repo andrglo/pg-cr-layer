@@ -145,9 +145,9 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       }
       params = params.map(function(param) {
         if (typeof param === 'object' && !(param instanceof Date)) {
-          return param && param.value || null;
+          return param && param.value !== void 0 ? param.value : null;
         } else {
-          return param || null;
+          return param !== void 0 ? param : null;
         }
       });
     }
