@@ -7,18 +7,18 @@ var istanbul = require('gulp-istanbul');
 var nsp = require('gulp-nsp');
 var coveralls = require('gulp-coveralls');
 
-gulp.task('static', function () {
+gulp.task('static', function() {
   return gulp.src('src/**/*.js')
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failAfterError());
 });
 
-gulp.task('nsp', function (cb) {
-  nsp('package.json', cb);
+gulp.task('nsp', function(cb) {
+  nsp({package: path.join(__dirname, 'package.json')}, cb);
 });
 
-gulp.task('pre-test', function () {
+gulp.task('pre-test', function() {
   return gulp.src('src/**/*.js')
     .pipe(istanbul({includeUntested: true}))
     .pipe(istanbul.hookRequire());
@@ -40,7 +40,7 @@ gulp.task('test', ['pre-test'], function(cb) {
     });
 });
 
-gulp.task('coveralls', ['test'], function () {
+gulp.task('coveralls', ['test'], function() {
   if (!process.env.CI) {
     return;
   }

@@ -29,7 +29,7 @@
     "gulp-eslint": "^1.0.0",
     "gulp-istanbul": "^0.10.0",
     "gulp-mocha": "^2.0.0",
-    "gulp-nsp": "^0.4.5"
+    "gulp-nsp": "^2.1.0"
   },
   "scripts": {
     "prepublish": "gulp prepublish",
@@ -37,6 +37,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "pg": "^4.4.2"
+    "pg": "^4.4.3"
   }
 }
