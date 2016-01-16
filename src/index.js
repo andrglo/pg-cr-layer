@@ -27,24 +27,16 @@ function PgCrLayer(config) {
   if (config.native === true) {
     pg = pg.native;
   }
-  this.config = {
-    user: config.user || pg.defaults.user,
-    database: config.database || pg.defaults.database,
-    password: config.password || pg.defaults.password,
-    port: config.port || pg.defaults.port,
-    host: config.host || pg.defaults.host,
-    poolSize: config.pool && config.pool.max || pg.defaults.poolSize,
-    poolIdleTimeout: config.pool && config.pool.idleTimeout || pg.defaults.poolIdleTimeout
-  };
+  this.config = toPgConfig(config);
 }
 
 PgCrLayer.prototype.dialect = 'postgres';
 
 PgCrLayer.prototype.delimiters = '""';
 
-PgCrLayer.prototype.connect = function() {
-  var config = this.config;
+PgCrLayer.prototype.connect = function(config) {
   return new Promise(function(resolve, reject) {
+    config = toPgConfig(config, this.config);
     pg.connect(config, function(err, client, done) {
       if (err) {
         return reject(err);
@@ -52,7 +44,7 @@ PgCrLayer.prototype.connect = function() {
       done();
       resolve();
     });
-  });
+  }.bind(this));
 };
 
 /**
@@ -61,12 +53,13 @@ PgCrLayer.prototype.connect = function() {
  * fn should return a promise with commands that when resolved will be committed
  * or rolled back in case of an error. At each command you should pass
  * the transaction parameter as a transaction property in options
+ * @param options {object} - Optional database to connect
  * @returns {Promise} With the return of the last promise executed
  */
-PgCrLayer.prototype.transaction = function(fn) {
-  var config = this.config;
+PgCrLayer.prototype.transaction = function(fn, options) {
   return new Promise(function(resolve, reject) {
-    pg.connect(config, function(err, client, done) {
+    options = toPgConfig(options, this.config);
+    pg.connect(options, function(err, client, done) {
       if (err) {
         return reject(err);
       }
@@ -93,7 +86,7 @@ PgCrLayer.prototype.transaction = function(fn) {
           });
       });
     });
-  });
+  }.bind(this));
 };
 
 /**
@@ -164,8 +157,8 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       });
     });
   } else {
-    var config = this.config;
     return new Promise(function(resolve, reject) {
+      var config = toPgConfig(options, this.config);
       convertParams();
       pg.connect(config, function(err, client, done) {
         if (err) {
@@ -181,7 +174,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
           resolve(result.rows);
         });
       });
-    });
+    }.bind(this));
   }
 };
 
@@ -202,4 +195,15 @@ PgCrLayer.prototype.wrap = function(identifier) {
   return this.delimiters[0] + identifier + this.delimiters[1];
 };
 
-
+function toPgConfig(config, defaultConfig) {
+  config = config || {};
+  return {
+    user: config.user || defaultConfig && defaultConfig.user || pg.defaults.user,
+    database: config.database || defaultConfig && defaultConfig.database || pg.defaults.database,
+    password: config.password || defaultConfig && defaultConfig.password || pg.defaults.password,
+    port: config.port || defaultConfig && defaultConfig.port || pg.defaults.port,
+    host: config.host || defaultConfig && defaultConfig.host || pg.defaults.host,
+    poolSize: config.pool && config.pool.max || defaultConfig && defaultConfig.poolSize || pg.defaults.poolSize,
+    poolIdleTimeout: config.pool && config.pool.idleTimeout || defaultConfig && defaultConfig.poolIdleTimeout || pg.defaults.poolIdleTimeout
+  };
+}

@@ -40,19 +40,13 @@ function createPostgresDb(dbName) {
     });
 }
 
-before(function(done) {
+before(function() {
   return createPostgresDb(databaseName[0])
     .then(function() {
       return createPostgresDb(databaseName[1])
     })
     .then(function() {
       return createPostgresDb(databaseName[2])
-    })
-    .then(function() {
-      done();
-    })
-    .catch(function(error) {
-      done(error);
     });
 });
 
@@ -60,22 +54,19 @@ describe('postgres cr layer', function() {
   var layer0;
   var layer1;
   var layer2;
-  before(function(done) {
+  before(function() {
     config.database = databaseName[0];
     layer0 = new PgCrLayer(config);
     config.database = databaseName[1];
     layer1 = new PgCrLayer(config);
     config.database = databaseName[2];
     layer2 = new PgCrLayer(config);
-    layer0.connect()
+    return layer0.connect()
       .then(function() {
         return layer1.connect();
       })
       .then(function() {
         return layer2.connect();
-      })
-      .then(function() {
-        done();
       });
   });
 
@@ -647,6 +638,27 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
+  it('using another layer, layer0, lets check product 5 the if the columns are 0/\'\'', function(done) {
+    layer0.query('SELECT * FROM products WHERE product_no=$1', [5], {database: databaseName[1]})
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal('');
+        expect(record.price).to.equal('0');
+        done();
+      })
+      .catch(done);
+  });
+  it('check again if film exists in layer 0', function(done) {
+    layer0.query('SELECT * FROM films')
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(0);
+        done();
+      })
+      .catch(done);
+  });
   it('should run the usage example', function(done) {
 
     config.database = databaseName[0];
@@ -693,16 +705,13 @@ describe('postgres cr layer', function() {
         done(error);
       });
   });
-  after(function(done) {
-    layer0.close()
+  after(function() {
+    return layer0.close()
       .then(function() {
         return layer1.close();
       })
       .then(function() {
         return layer2.close();
-      })
-      .then(function() {
-        done();
       });
   });
 });
