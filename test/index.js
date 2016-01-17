@@ -16,8 +16,8 @@ var databaseName = [
 var config = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: process.env.POSTGRES_PORT || 5432,
+  host: process.env.POSTGRES_HOST,
+  port: process.env.POSTGRES_PORT,
   pool: {
     max: 25,
     idleTimeout: 30000
@@ -655,6 +655,31 @@ describe('postgres cr layer', function() {
       .then(function(recordset) {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(0);
+        done();
+      })
+      .catch(done);
+  });
+  it('create a layer with no connection info', function(done) {
+    var layer = new PgCrLayer();
+    layer
+      .query('SELECT * FROM products WHERE product_no=$1', [5], {
+        user: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD || 'postgres',
+        host: process.env.POSTGRES_HOST,
+        port: process.env.POSTGRES_PORT,
+        database: databaseName[1]
+      })
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array');
+        expect(recordset.length).to.equal(1);
+        var record = recordset[0];
+        expect(record.name).to.equal('');
+        expect(record.price).to.equal('0');
+      })
+      .then(function() {
+        return layer.close();
+      })
+      .then(function() {
         done();
       })
       .catch(done);

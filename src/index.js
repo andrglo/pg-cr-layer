@@ -24,7 +24,7 @@ function PgCrLayer(config) {
   if (!(this instanceof PgCrLayer)) {
     return new PgCrLayer(config);
   }
-  if (config.native === true) {
+  if (config && config.native === true) {
     pg = pg.native;
   }
   this.config = toPgConfig(config);
@@ -201,8 +201,8 @@ function toPgConfig(config, defaultConfig) {
     user: config.user || defaultConfig && defaultConfig.user || pg.defaults.user,
     database: config.database || defaultConfig && defaultConfig.database || pg.defaults.database,
     password: config.password || defaultConfig && defaultConfig.password || pg.defaults.password,
-    port: config.port || defaultConfig && defaultConfig.port || pg.defaults.port,
-    host: config.host || defaultConfig && defaultConfig.host || pg.defaults.host,
+    port: config.port || defaultConfig && defaultConfig.port || pg.defaults.port || 5432,
+    host: config.host || defaultConfig && defaultConfig.host || pg.defaults.host || 'localhost',
     poolSize: config.pool && config.pool.max || defaultConfig && defaultConfig.poolSize || pg.defaults.poolSize,
     poolIdleTimeout: config.pool && config.pool.idleTimeout || defaultConfig && defaultConfig.poolIdleTimeout || pg.defaults.poolIdleTimeout
   };
