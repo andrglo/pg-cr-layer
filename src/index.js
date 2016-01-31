@@ -1,6 +1,8 @@
 var pg = require('pg');
 var assert = require('assert');
 
+var connectionParams = new WeakMap(); // Hidden connection parameters
+
 module.exports = PgCrLayer;
 
 /**
@@ -27,7 +29,7 @@ function PgCrLayer(config) {
   if (config && config.native === true) {
     pg = pg.native;
   }
-  this.config = toPgConfig(config);
+  connectionParams.set(this, toPgConfig(config));
 }
 
 PgCrLayer.prototype.dialect = 'postgres';
@@ -36,7 +38,7 @@ PgCrLayer.prototype.delimiters = '""';
 
 PgCrLayer.prototype.connect = function(config) {
   return new Promise(function(resolve, reject) {
-    config = toPgConfig(config, this.config);
+    config = toPgConfig(config, connectionParams.get(this));
     pg.connect(config, function(err, client, done) {
       if (err) {
         return reject(err);
@@ -58,7 +60,7 @@ PgCrLayer.prototype.connect = function(config) {
  */
 PgCrLayer.prototype.transaction = function(fn, options) {
   return new Promise(function(resolve, reject) {
-    options = toPgConfig(options, this.config);
+    options = toPgConfig(options, connectionParams.get(this));
     pg.connect(options, function(err, client, done) {
       if (err) {
         return reject(err);
@@ -158,7 +160,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
     });
   } else {
     return new Promise(function(resolve, reject) {
-      var config = toPgConfig(options, this.config);
+      var config = toPgConfig(options, connectionParams.get(this));
       convertParams();
       pg.connect(config, function(err, client, done) {
         if (err) {
