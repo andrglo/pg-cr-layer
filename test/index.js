@@ -236,6 +236,17 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
+  it('products should return only one column', function(done) {
+    layer1.query('SELECT name,name FROM products')
+      .then(function(recordset) {
+        recordset.forEach(record => {
+          expect(Object.keys(record).length).to.equal(1);
+          expect(record.name).to.be.a('string');
+        });
+        done();
+      })
+      .catch(done);
+  });
   it('should not create any record if a transaction fails due the server in layer 1', function(done) {
     layer1
       .transaction(function(t) {
