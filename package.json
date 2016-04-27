@@ -23,13 +23,13 @@
     "interface"
   ],
   "devDependencies": {
-    "chai": "^3.3.0",
-    "gulp": "^3.6.0",
+    "chai": "^3.5.0",
+    "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.0",
-    "gulp-eslint": "^1.0.0",
-    "gulp-istanbul": "^0.10.0",
+    "gulp-eslint": "^2.0.0",
+    "gulp-istanbul": "^0.10.4",
     "gulp-mocha": "^2.0.0",
-    "gulp-nsp": "^2.1.0"
+    "gulp-nsp": "^2.4.0"
   },
   "scripts": {
     "prepublish": "gulp prepublish",
@@ -37,6 +37,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "pg": "^4.4.3"
+    "pg": "^4.5.4"
   }
 }
