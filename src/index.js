@@ -91,6 +91,56 @@ PgCrLayer.prototype.transaction = function(fn, options) {
   }.bind(this));
 };
 
+const doneMap = new WeakMap();
+
+PgCrLayer.prototype.beginTransaction = function(options) {
+  return new Promise(function(resolve, reject) {
+    options = toPgConfig(options, connectionParams.get(this));
+    pg.connect(options, function(err, transaction, done) {
+      if (err) {
+        return reject(err);
+      }
+      transaction.query('BEGIN', function(err) {
+        if (err) {
+          transaction.query('ROLLBACK', function(err) {
+            done(err);
+            reject(err);
+          });
+          return;
+        }
+        doneMap.set(transaction, done);
+        resolve(transaction);
+      });
+    });
+  }.bind(this));
+};
+
+PgCrLayer.prototype.commit = function(transaction) {
+  return new Promise(function(resolve, reject) {
+    transaction.query('COMMIT', function(err) {
+      doneMap.get(transaction)(err);
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
+PgCrLayer.prototype.rollback = function(transaction) {
+  return new Promise(function(resolve, reject) {
+    transaction.query('ROLLBACK', function(err) {
+      doneMap.get(transaction)(err);
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
 /**
  * Execute a script
  * @param script {string}
