@@ -32,6 +32,10 @@ function PgCrLayer(config) {
   connectionParams.set(this, toPgConfig(config));
 }
 
+pg.on('error', function() {
+  // Ignore
+});
+
 PgCrLayer.prototype.dialect = 'postgres';
 
 PgCrLayer.prototype.delimiters = '""';
