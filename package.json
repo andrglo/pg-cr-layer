@@ -1,6 +1,6 @@
 {
   "name": "pg-cr-layer",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A postgres interface layer for common requests",
   "homepage": "",
   "repository": "andrglo/pg-cr-layer",

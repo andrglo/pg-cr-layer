@@ -29,7 +29,12 @@ function PgCrLayer(config) {
   if (config && config.native === true) {
     pg = pg.native;
   }
-  connectionParams.set(this, toPgConfig(config));
+  let pgConfig = toPgConfig(config);
+  connectionParams.set(this, pgConfig);
+  this.user = pgConfig.user;
+  this.database = pgConfig.database;
+  this.host = pgConfig.server;
+  this.port = pgConfig.port;
 }
 
 pg.on('error', function() {
