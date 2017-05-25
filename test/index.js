@@ -1,19 +1,19 @@
 'use strict';
 
-var assert = require('assert');
-var PgCrLayer = require('../src');
-var pg = require('pg');
-var chai = require('chai');
-var expect = chai.expect;
+const assert = require('assert');
+const PgCrLayer = require('../src');
+const pg = require('pg');
+const chai = require('chai');
+const expect = chai.expect;
 chai.should();
 
-var databaseName = [
+const databaseName = [
   'tests-pg-cr-layer-1',
   'tests-pg-cr-layer-2',
   'tests-pg-cr-layer-3'
 ];
 
-var config = {
+const config = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   host: process.env.POSTGRES_HOST || 'localhost',
@@ -24,9 +24,9 @@ var config = {
   }
 };
 
-var log = console.log;
+const log = console.log;
 
-var createDbLayer = {};
+const createDbLayer = {};
 
 function createPostgresDb(dbName) {
   config.database = 'postgres';
@@ -51,9 +51,9 @@ before(function() {
 });
 
 describe('postgres cr layer', function() {
-  var layer0;
-  var layer1;
-  var layer2;
+  let layer0;
+  let layer1;
+  let layer2;
   before(function() {
     config.database = databaseName[0];
     layer0 = new PgCrLayer(config);
@@ -328,7 +328,7 @@ describe('postgres cr layer', function() {
       })
       .catch(done);
   });
-  it('should create more one record using object parameters in layer 1', function(done) {
+  it('should create more one record using object parameters in layer 1', function() {
     return layer1.execute('INSERT INTO products ' +
       'VALUES (@product_no, @name, @price)', {
       name: 'Duck',
@@ -337,9 +337,7 @@ describe('postgres cr layer', function() {
     }).then(function(res) {
       expect(res).to.be.a('array');
       expect(res.length).to.equal(0);
-      done();
     })
-      .catch(done);
   });
   it('products should have five records in layer 1', function(done) {
     layer1.query('SELECT * FROM products')

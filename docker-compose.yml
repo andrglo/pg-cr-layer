@@ -1,7 +1,9 @@
 postgres:
-  image: postgres:9.4
+  image: sameersbn/postgresql:9.6-2
   ports:
     - 5432:5432
   environment:
-    POSTGRES_PASSWORD: postgres
+    PG_PASSWORD: postgres
+    DB_EXTENSION: unaccent,pg_trgm
   restart: always
+

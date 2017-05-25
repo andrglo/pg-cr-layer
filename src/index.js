@@ -1,7 +1,7 @@
-var pg = require('pg');
-var assert = require('assert');
+let pg = require('pg');
+const assert = require('assert');
 
-var connectionParams = new WeakMap(); // Hidden connection parameters
+const connectionParams = new WeakMap(); // Hidden connection parameters
 
 module.exports = PgCrLayer;
 
