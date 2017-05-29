@@ -346,7 +346,7 @@ describe('postgres cr layer', function() {
         expect(recordset.length).to.equal(5);
         var record = recordset[0];
         expect(record.product_no).to.be.a('number');
-        expect(record.price).to.be.a('string');
+        expect(record.price).to.be.a('number');
         done();
       })
       .catch(done);
@@ -458,30 +458,30 @@ describe('postgres cr layer', function() {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(6);
         var record = recordset[0];
-        expect(record.lastsale).to.be.a('Date');
+        expect(record.lastsale).to.be.a('string');
         expect(record.createdat).to.be.a('Date');
         expect(record.updatedat).to.be.a('Date');
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2014-12-31');
+        expect(record.lastsale).to.equal('2014-12-31');
         expect(record.createdat.toISOString()).to.equal('2014-12-31T00:00:00.000Z');
         expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T00:00:00')).toISOString());
         record = recordset[1];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-01');
+        expect(record.lastsale).to.equal('2015-01-01');
         expect(record.createdat.toISOString()).to.equal('2015-01-01T01:00:00.000Z');
         expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T23:00:00')).toISOString());
         record = recordset[2];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-02');
+        expect(record.lastsale).to.equal('2015-01-02');
         expect(record.createdat.toISOString()).to.equal('2014-12-31T23:00:00.000Z');
         expect(record.updatedat.toISOString()).to.equal((new Date('2015-01-01T01:00:00')).toISOString());
         record = recordset[3];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-03');
+        expect(record.lastsale).to.equal('2015-01-03');
         expect(record.createdat.toISOString()).to.equal('2014-12-31T22:00:00.000Z');
         expect(record.updatedat.toISOString()).to.equal((new Date('2015-01-01T02:00:00')).toISOString());
         record = recordset[4];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-04');
+        expect(record.lastsale).to.equal('2015-01-04');
         expect(record.createdat.toISOString()).to.equal('2015-01-01T02:00:00.000Z');
         expect(record.updatedat.toISOString()).to.equal((new Date('2014-12-31T22:00:00')).toISOString());
         record = recordset[5];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal(now.toISOString().substr(0, 10));
+        expect(record.lastsale).to.equal(now.toISOString().substr(0, 10));
         expect(record.createdat.toISOString()).to.equal(now.toISOString());
         expect(record.updatedat.toISOString()).to.equal(now.toISOString());
         done();
@@ -505,7 +505,7 @@ describe('postgres cr layer', function() {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(5);
         var record = recordset[0];
-        expect(record.lastsale.toISOString().substr(0, 10)).to.equal('2015-01-01');
+        expect(record.lastsale).to.equal('2015-01-01');
         done();
       })
       .catch(done);
@@ -647,7 +647,7 @@ describe('postgres cr layer', function() {
         expect(recordset.length).to.equal(1);
         var record = recordset[0];
         expect(record.name).to.equal('');
-        expect(record.price).to.equal('0');
+        expect(record.price).to.equal(0);
         done();
       })
       .catch(done);
@@ -670,19 +670,7 @@ describe('postgres cr layer', function() {
         expect(recordset.length).to.equal(1);
         var record = recordset[0];
         expect(record.name).to.equal('');
-        expect(record.price).to.equal('0');
-        done();
-      })
-      .catch(done);
-  });
-  it('using another layer, layer0, lets check product 5 the if the columns are 0/\'\'', function(done) {
-    layer0.query('SELECT * FROM products WHERE product_no=$1', [5], {database: databaseName[1]})
-      .then(function(recordset) {
-        expect(recordset).to.be.a('array');
-        expect(recordset.length).to.equal(1);
-        var record = recordset[0];
-        expect(record.name).to.equal('');
-        expect(record.price).to.equal('0');
+        expect(record.price).to.equal(0);
         done();
       })
       .catch(done);
@@ -720,31 +708,6 @@ describe('postgres cr layer', function() {
       .then(function(recordset) {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(2);
-        done();
-      })
-      .catch(done);
-  });
-  it('create a layer with no connection info', function(done) {
-    var layer = new PgCrLayer();
-    layer
-      .query('SELECT * FROM products WHERE product_no=$1', [5], {
-        user: process.env.POSTGRES_USER || 'postgres',
-        password: process.env.POSTGRES_PASSWORD || 'postgres',
-        host: process.env.POSTGRES_HOST,
-        port: process.env.POSTGRES_PORT,
-        database: databaseName[1]
-      })
-      .then(function(recordset) {
-        expect(recordset).to.be.a('array');
-        expect(recordset.length).to.equal(1);
-        var record = recordset[0];
-        expect(record.name).to.equal('');
-        expect(record.price).to.equal('0');
-      })
-      .then(function() {
-        return layer.close();
-      })
-      .then(function() {
         done();
       })
       .catch(done);
