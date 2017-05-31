@@ -29,19 +29,13 @@ function PgCrLayer(config) {
   if (!(this instanceof PgCrLayer)) {
     return new PgCrLayer(config)
   }
-  config = config || {}
-  if (config.native === true) {
+  if (config && config.native === true) {
     pg = pg.native
   }
-  const pgConfig = toPgConfig(config)
-  this.pool = new pg.Pool(pgConfig)
+  this.pool = new pg.Pool(config)
   this.pool.on('error', function(err, client) {
     console.error('idle client error in pool', client, err)
   })
-  this.user = pgConfig.user
-  this.database = pgConfig.database
-  this.host = pgConfig.server
-  this.port = pgConfig.port
 }
 
 PgCrLayer.prototype.dialect = 'postgres'
@@ -254,16 +248,3 @@ PgCrLayer.prototype.wrap = function(identifier) {
   return this.delimiters[0] + identifier + this.delimiters[1]
 }
 
-function toPgConfig(config) {
-  return {
-    user: config.user || pg.defaults.user,
-    database: config.database || pg.defaults.database,
-    password: config.password || pg.defaults.password,
-    port: config.port || pg.defaults.port || 5432,
-    host: config.host || pg.defaults.host || 'localhost',
-    poolSize: config.pool && config.pool.max
-              || pg.defaults.poolSize,
-    poolIdleTimeout: config.pool && config.pool.idleTimeout
-                     || pg.defaults.poolIdleTimeout
-  }
-}
