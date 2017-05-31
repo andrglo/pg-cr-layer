@@ -29,7 +29,8 @@ function PgCrLayer(config) {
   if (!(this instanceof PgCrLayer)) {
     return new PgCrLayer(config)
   }
-  if (config && config.native === true) {
+  config = config || {}
+  if (config.native === true) {
     pg = pg.native
   }
   const pgConfig = toPgConfig(config)
