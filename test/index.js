@@ -70,6 +70,13 @@ describe('postgres cr layer', function() {
       });
   });
 
+  it('should identify vanilla postgres as not being redshift', function(done) {
+    layer0.isRedshift()
+      .then(function(res) {
+        expect(res).to.equal(false);
+        done();
+      })
+  });
   it('should create a table in layer 0', function(done) {
     layer0.execute('CREATE TABLE films (' +
       'code char(5) CONSTRAINT firstkey PRIMARY KEY, ' +
