@@ -55,6 +55,29 @@ PgCrLayer.prototype.connect = function() {
 }
 
 /**
+ * Detect if we're conncted to redshift, since that impacts compatibility
+ * concerns of consumers of this API.
+ */
+PgCrLayer.prototype.isRedshift = function() {
+  return new Promise(function(resolve, reject) {
+    this.pool.connect(function(err, client, done) {
+      if (err) {
+        return reject(err)
+      }
+      client.query('SELECT version()', function(err, res) {
+        if (err) {
+          done(err)
+          reject(err)
+        }
+
+        done()
+        resolve(res.rows[0].version.includes('Redshift'))
+      })
+    })
+  }.bind(this))
+}
+
+/**
  * Manage a transaction
  * @param fn(transaction)
  * fn should return a promise with commands that when resolved will be committed
@@ -247,4 +270,3 @@ PgCrLayer.prototype.close = function() {
 PgCrLayer.prototype.wrap = function(identifier) {
   return this.delimiters[0] + identifier + this.delimiters[1]
 }
-
