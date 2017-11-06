@@ -530,7 +530,7 @@ describe('postgres cr layer', function() {
   });
   it('lets check the where in a datetime field without time zone', function(done) {
     layer2.query('SELECT * FROM products WHERE updatedAt >= $1 ORDER BY updatedAt',
-      [new Date('2015-01-01T00:00:00+01:00')])
+      [new Date('2015-01-01T01:00:00.000Z')])
       .then(function(recordset) {
         expect(recordset).to.be.a('array');
         expect(recordset.length).to.equal(4);
