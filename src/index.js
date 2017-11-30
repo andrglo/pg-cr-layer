@@ -237,7 +237,11 @@ PgCrLayer.prototype.query = function(statement, params, options) {
         if (err) {
           return reject(err)
         }
-        resolve(result.rows)
+        resolve(
+          Array.isArray(result) // multiple statements
+            ? result.map(({rows}) => rows)
+            : result.rows
+        )
       })
     })
   } else {
@@ -248,7 +252,11 @@ PgCrLayer.prototype.query = function(statement, params, options) {
           reject(err)
           return
         }
-        resolve(result.rows)
+        resolve(
+          Array.isArray(result) // multiple statements
+            ? result.map(({rows}) => rows)
+            : result.rows
+        )
       })
     }.bind(this))
   }
