@@ -1,6 +1,6 @@
 {
   "name": "pg-cr-layer",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "A postgres interface layer for common requests",
   "homepage": "",
   "repository": "andrglo/pg-cr-layer",
@@ -23,20 +23,14 @@
     "interface"
   ],
   "devDependencies": {
-    "chai": "^4.1.2",
-    "gulp": "^3.9.1",
-    "gulp-coveralls": "^0.1.0",
-    "gulp-eslint": "^4.0.0",
-    "gulp-istanbul": "^1.1.2",
-    "gulp-mocha": "^3.0.1",
-    "gulp-nsp": "^2.4.2"
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0"
   },
   "scripts": {
-    "prepublish": "gulp prepublish",
-    "test": "gulp"
+    "test": "NODE_ENV=test NODE_PATH=./src mocha --bail --exit --timeout 60000 test/*.js"
   },
   "license": "MIT",
   "dependencies": {
-    "pg": "^7.4.0"
+    "pg": "^7.6.1"
   }
 }

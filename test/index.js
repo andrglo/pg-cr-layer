@@ -18,10 +18,9 @@ const config = {
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || 5432,
-  pool: {
-    max: 25,
-    idleTimeout: 30000
-  }
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000
 };
 
 const log = console.log;

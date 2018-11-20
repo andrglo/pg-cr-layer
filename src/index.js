@@ -35,6 +35,7 @@ function PgCrLayer(config) {
   this.pool = new pg.Pool(config)
   this.pool.on('error', function(err, client) {
     console.error('idle client error in pool', client, err)
+    process.exit(-1)
   })
 }
 
