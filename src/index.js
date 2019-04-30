@@ -44,15 +44,17 @@ PgCrLayer.prototype.dialect = 'postgres'
 PgCrLayer.prototype.delimiters = '""'
 
 PgCrLayer.prototype.connect = function() {
-  return new Promise(function(resolve, reject) {
-    this.pool.connect(function(err, client, done) {
-      if (err) {
-        return reject(err)
-      }
-      done()
-      resolve()
-    })
-  }.bind(this))
+  return new Promise(
+    function(resolve, reject) {
+      this.pool.connect(function(err, client, done) {
+        if (err) {
+          return reject(err)
+        }
+        done()
+        resolve()
+      })
+    }.bind(this)
+  )
 }
 
 /**
@@ -60,22 +62,24 @@ PgCrLayer.prototype.connect = function() {
  * concerns of consumers of this API.
  */
 PgCrLayer.prototype.isRedshift = function() {
-  return new Promise(function(resolve, reject) {
-    this.pool.connect(function(err, client, done) {
-      if (err) {
-        return reject(err)
-      }
-      client.query('SELECT version()', function(err, res) {
+  return new Promise(
+    function(resolve, reject) {
+      this.pool.connect(function(err, client, done) {
         if (err) {
-          done(err)
-          reject(err)
+          return reject(err)
         }
+        client.query('SELECT version()', function(err, res) {
+          if (err) {
+            done(err)
+            reject(err)
+          }
 
-        done()
-        resolve(res.rows[0].version.includes('Redshift'))
+          done()
+          resolve(res.rows[0].version.includes('Redshift'))
+        })
       })
-    })
-  }.bind(this))
+    }.bind(this)
+  )
 }
 
 /**
@@ -84,61 +88,65 @@ PgCrLayer.prototype.isRedshift = function() {
  * fn should return a promise with commands that when resolved will be committed
  * or rolled back in case of an error. At each command you should pass
  * the transaction parameter as a transaction property in options
- * @returns {Promise} With the return of the last promise executed
+ * @return {Promise} With the return of the last promise executed
  */
 PgCrLayer.prototype.transaction = function(fn) {
-  return new Promise(function(resolve, reject) {
-    this.pool.connect(function(err, client, done) {
-      if (err) {
-        return reject(err)
-      }
-      client.query('BEGIN', function(err) {
+  return new Promise(
+    function(resolve, reject) {
+      this.pool.connect(function(err, client, done) {
         if (err) {
-          client.query('ROLLBACK', function(err) {
-            done(err)
-            reject(err)
-          })
-          return
+          return reject(err)
         }
-        fn(client)
-          .then(function(res) {
-            client.query('COMMIT', function(err) {
-              done(err)
-              resolve(res)
-            })
-          })
-          .catch(function(fnError) {
+        client.query('BEGIN', function(err) {
+          if (err) {
             client.query('ROLLBACK', function(err) {
               done(err)
-              reject(fnError)
+              reject(err)
             })
-          })
+            return
+          }
+          fn(client)
+            .then(function(res) {
+              client.query('COMMIT', function(err) {
+                done(err)
+                resolve(res)
+              })
+            })
+            .catch(function(fnError) {
+              client.query('ROLLBACK', function(err) {
+                done(err)
+                reject(fnError)
+              })
+            })
+        })
       })
-    })
-  }.bind(this))
+    }.bind(this)
+  )
 }
 
 const doneMap = new WeakMap()
 
 PgCrLayer.prototype.beginTransaction = function() {
-  return new Promise(function(resolve, reject) {
-    this.pool.connect(function(err, transaction, done) {
-      if (err) {
-        return reject(err)
-      }
-      transaction.query('BEGIN', function(err) {
+  return new Promise(
+    function(resolve, reject) {
+      this.pool.connect(function(err, transaction, done) {
         if (err) {
-          transaction.query('ROLLBACK', function(err) {
-            done(err)
-            reject(err)
-          })
-          return
+          return reject(err)
         }
-        doneMap.set(transaction, done)
-        resolve(transaction)
+        transaction.query('BEGIN', function(err) {
+          if (err) {
+            transaction.query('ROLLBACK', function(err) {
+              done(err)
+              reject(err)
+            })
+            return
+          }
+          doneMap.set(transaction, done)
+          resolve(transaction)
+        })
       })
-    })
-  }.bind(this))
+    }.bind(this)
+  )
 }
 
 PgCrLayer.prototype.commit = function(transaction) {
@@ -171,7 +179,7 @@ PgCrLayer.prototype.rollback = function(transaction) {
  * Execute a script
  * @param script {string}
  * @param options {object} Can contain the transaction connection
- * @returns {Promise}
+ * @return {Promise}
  */
 PgCrLayer.prototype.batch = function(script, options) {
   return this.query(script, null, options)
@@ -184,7 +192,7 @@ PgCrLayer.prototype.batch = function(script, options) {
  * element of the array. If object it will replace @key1, @key2 with the value with
  * each correspondent key
  * @param options {object} Can contain the transaction connection
- * @returns {Promise}
+ * @return {Promise}
  */
 PgCrLayer.prototype.execute = function(statement, params, options) {
   return this.query(statement, params, options)
@@ -197,10 +205,9 @@ PgCrLayer.prototype.execute = function(statement, params, options) {
  * element of the array. If object it will replace @key1, @key2 with the value with
  * each correspondent key
  * @param options {object} Can contain the transaction connection
- * @returns {Promise}
+ * @return {Promise}
  */
 PgCrLayer.prototype.query = function(statement, params, options) {
-
   var convertParams = function() {
     if (params && params !== null) {
       if (typeof params === 'object' && !Array.isArray(params)) {
@@ -211,21 +218,19 @@ PgCrLayer.prototype.query = function(statement, params, options) {
             statement = statement.replace(param, '$' + i)
             i++
             var key = param.substr(1)
-            assert(params[key], 'Parameter ' + param
-                                + ' not found in object params')
+            assert(
+              params[key],
+              'Parameter ' + param + ' not found in object params'
+            )
             return params[key]
           })
           : []
       }
       params = params.map(function(param) {
         if (typeof param === 'object' && !(param instanceof Date)) {
-          return param && param.value !== void 0
-            ? param.value
-            : null
+          return param && param.value !== void 0 ? param.value : null
         } else {
-          return param !== void 0
-            ? param
-            : null
+          return param !== void 0 ? param : null
         }
       })
     }
@@ -246,26 +251,28 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       })
     })
   } else {
-    return new Promise(function(resolve, reject) {
-      convertParams()
-      this.pool.query(statement, params, function(err, result) {
-        if (err) {
-          reject(err)
-          return
-        }
-        resolve(
-          Array.isArray(result) // multiple statements
-            ? result.map(({rows}) => rows)
-            : result.rows
-        )
-      })
-    }.bind(this))
+    return new Promise(
+      function(resolve, reject) {
+        convertParams()
+        this.pool.query(statement, params, function(err, result) {
+          if (err) {
+            reject(err)
+            return
+          }
+          resolve(
+            Array.isArray(result) // multiple statements
+              ? result.map(({rows}) => rows)
+              : result.rows
+          )
+        })
+      }.bind(this)
+    )
   }
 }
 
 /**
  * Close all connections in the poll
- * @returns {Promise}
+ * @return {Promise}
  */
 PgCrLayer.prototype.close = function() {
   return Promise.resolve(this.pool.end())
@@ -274,7 +281,7 @@ PgCrLayer.prototype.close = function() {
 /**
  * Wrap the identifier within the appropriate delimiters
  * @param identifier {string}
- * @returns identifier {string}
+ * @return identifier {string}
  */
 PgCrLayer.prototype.wrap = function(identifier) {
   return this.delimiters[0] + identifier + this.delimiters[1]
