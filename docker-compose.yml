@@ -1,9 +1,25 @@
-postgres:
-  image: sameersbn/postgresql:10
-  ports:
-    - 5432:5432
-  environment:
-    PG_PASSWORD: postgres
-    DB_EXTENSION: unaccent,pg_trgm
-  restart: always
+version: '2'
+
+services:
+
+  dms:
+    image: andrglo/everest:12.0.0
+    hostname: pg-cr-layer
+    command: tail -f /dev/null
+    working_dir: /root/pg-cr-layer
+    volumes:
+      # - ./docker_fish_history:/root/.config/fish/fish_history
+      - .:/root/pg-cr-layer
+    environment:
+      - NODE_ENV=test
+      - POSTGRES_HOST=postgres
+    restart: always
+
+  postgres:
+    image: postgres:11.2-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+
 

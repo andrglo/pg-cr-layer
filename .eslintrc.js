@@ -8,7 +8,8 @@ module.exports = {
   },
   env: {
     node: true,
-    es6: true
+    es6: true,
+    mocha: true
   },
   rules: {
     'generator-star-spacing': [
@@ -21,6 +22,7 @@ module.exports = {
     'comma-dangle': 0,
     semi: ['error', 'never'],
     'require-jsdoc': 0,
+    'valid-jsdoc': 0,
     'quote-props': 0,
     'no-extra-parens': 0,
     'arrow-parens': ['error', 'as-needed'],
