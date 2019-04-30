@@ -1,4 +1,4 @@
-# pg-cr-layer [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Coverage percentage][coveralls-image]][coveralls-url]
+# pg-cr-layer [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/pg-cr-layer.svg?style=svg)](https://circleci.com/gh/andrglo/pg-cr-layer) [![Coverage percentage][coveralls-image]][coveralls-url]
 > A postgres interface layer for common requests. It uses [pg](https://github.com/brianc/node-postgres) to connect
 and wraps it in a tiny layer using ES2015 promises with the goal to be simpler and compatible with [mssql](https://github.com/patriksimek/node-mssql)
 via [mssql-cr-layer](https://github.com/andrglo/mssql-cr-layer)
