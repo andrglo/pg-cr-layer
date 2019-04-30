@@ -2,12 +2,10 @@
   "name": "pg-cr-layer",
   "version": "2.0.5",
   "description": "A postgres interface layer for common requests",
-  "homepage": "",
-  "repository": "andrglo/pg-cr-layer",
+  "repository": "https://github.com/andrglo/pg-cr-layer.git",
   "author": {
     "name": "Andre Gloria",
-    "email": "andredagloria@gmail.com",
-    "url": "andrglo.com"
+    "email": "andredagloria@gmail.com"
   },
   "files": [
     "src"
@@ -16,7 +14,6 @@
   "keywords": [
     "postgres",
     "pg",
-    "promise",
     "sql",
     "common",
     "requests",
@@ -24,13 +21,19 @@
   ],
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^5.2.0"
+    "coveralls": "^3.0.3",
+    "eslint": "^5.16.0",
+    "eslint-config-google": "^0.12.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.0.0"
   },
   "scripts": {
-    "test": "NODE_ENV=test NODE_PATH=./src mocha --bail --exit --timeout 60000 test/*.js"
+    "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
+    "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
+    "ssh": "docker exec -it pg-cr-layer_dms_1 fish"
   },
   "license": "MIT",
   "dependencies": {
-    "pg": "^7.6.1"
+    "pg": "^7.10.0"
   }
 }
