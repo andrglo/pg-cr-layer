@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest:12.0.0
+    image: andrglo/everest:12.16.1
     hostname: pg-cr-layer
     command: tail -f /dev/null
     working_dir: /root/pg-cr-layer
@@ -16,7 +16,7 @@ services:
     restart: always
 
   postgres:
-    image: postgres:11.2-alpine
+    image: postgres:12.2-alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
