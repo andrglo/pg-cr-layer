@@ -1,6 +1,6 @@
 {
   "name": "pg-cr-layer",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "description": "A postgres interface layer for common requests",
   "repository": "https://github.com/andrglo/pg-cr-layer.git",
   "author": {
@@ -22,9 +22,9 @@
   "devDependencies": {
     "chai": "^4.3.6",
     "coveralls": "^3.1.1",
-    "eslint": "^8.9.0",
+    "eslint": "^8.19.0",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^9.2.1",
+    "mocha": "^10.0.0",
     "nyc": "^15.1.0"
   },
   "scripts": {
