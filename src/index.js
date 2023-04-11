@@ -1,5 +1,6 @@
 let pg = require('pg')
 const assert = require('assert')
+const debug = require('debug')('layer:pg')
 
 const types = pg.types
 
@@ -241,6 +242,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       convertParams()
       options.transaction.query(statement, params, function(err, result) {
         if (err) {
+          debug('%s %O', statement, err)
           return reject(err)
         }
         resolve(
@@ -256,6 +258,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
         convertParams()
         this.pool.query(statement, params, function(err, result) {
           if (err) {
+            debug('%s %O', statement, err)
             reject(err)
             return
           }
