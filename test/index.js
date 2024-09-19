@@ -1,7 +1,4 @@
 const PgCrLayer = require('../src')
-const chai = require('chai')
-const expect = chai.expect
-chai.should()
 
 const databaseName = [
   'tests-pg-cr-layer-1',
@@ -33,14 +30,20 @@ function createPostgresDb(dbName) {
   })
 }
 
+let expect
+
 before(function() {
-  return createPostgresDb(databaseName[0])
-    .then(function() {
-      return createPostgresDb(databaseName[1])
-    })
-    .then(function() {
-      return createPostgresDb(databaseName[2])
-    })
+  return import('chai').then(chai => {
+    chai.should()
+    expect = chai.expect
+    return createPostgresDb(databaseName[0])
+      .then(function() {
+        return createPostgresDb(databaseName[1])
+      })
+      .then(function() {
+        return createPostgresDb(databaseName[2])
+      })
+  })
 })
 
 describe('postgres cr layer', function() {
@@ -500,7 +503,7 @@ describe('postgres cr layer', function() {
           'INSERT INTO products ' + 'VALUES ($1, $2, $3, $4, $5, $6)',
           [
             2,
-            'Pasta',
+            'Pizza',
             49.99,
             '2015-01-01',
             '2015-01-01T00:00:00-01:00',
@@ -513,7 +516,7 @@ describe('postgres cr layer', function() {
           'INSERT INTO products ' + 'VALUES ($1, $2, $3, $4, $5, $6)',
           [
             2,
-            'Pasta',
+            'Lasagna',
             49.99,
             '2015-01-02',
             '2015-01-01T00:00:00+01:00',
@@ -526,7 +529,7 @@ describe('postgres cr layer', function() {
           'INSERT INTO products ' + 'VALUES ($1, $2, $3, $4, $5, $6)',
           [
             2,
-            'Pasta',
+            'Salada',
             49.99,
             '2015-01-03',
             '2015-01-01T00:00:00+02:00',
@@ -539,7 +542,7 @@ describe('postgres cr layer', function() {
           'INSERT INTO products ' + 'VALUES ($1, $2, $3, $4, $5, $6)',
           [
             2,
-            'Pasta',
+            'Sushi',
             49.99,
             '2015-01-04',
             '2015-01-01T00:00:00-02:00',
@@ -658,11 +661,11 @@ describe('postgres cr layer', function() {
     layer2
       .query(
         'SELECT * FROM products WHERE updatedAt >= $1 ORDER BY updatedAt',
-        ['2015-01-01T01:00:00.000Z']
+        [new Date('2015-01-01T01:00:00.000Z')]
       )
       .then(function(recordset) {
         expect(recordset).to.be.a('array')
-        expect(recordset.length).to.equal(3)
+        expect(recordset.length).to.equal(4)
         var record = recordset[0]
         expect(record.updatedat.toISOString()).to.equal(
           '2015-01-01T01:00:00.000Z'
