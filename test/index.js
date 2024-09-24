@@ -494,7 +494,7 @@ describe('postgres cr layer', function() {
             49.99,
             '2014-12-31',
             '2014-12-31T00:00:00Z',
-            new Date('2014-12-31T00:00:00')
+            new Date('2014-12-31T00:00:00-03:00')
           ]
         )
       })
@@ -507,7 +507,7 @@ describe('postgres cr layer', function() {
             49.99,
             '2015-01-01',
             '2015-01-01T00:00:00-01:00',
-            new Date('2014-12-31T23:00:00')
+            new Date('2014-12-31T23:00:00-03:00')
           ]
         )
       })
@@ -520,7 +520,7 @@ describe('postgres cr layer', function() {
             49.99,
             '2015-01-02',
             '2015-01-01T00:00:00+01:00',
-            new Date('2015-01-01T01:00:00')
+            new Date('2015-01-01T01:00:00-03:00')
           ]
         )
       })
@@ -533,7 +533,7 @@ describe('postgres cr layer', function() {
             49.99,
             '2015-01-03',
             '2015-01-01T00:00:00+02:00',
-            new Date('2015-01-01T02:00:00')
+            new Date('2015-01-01T02:00:00-03:00')
           ]
         )
       })
@@ -546,7 +546,7 @@ describe('postgres cr layer', function() {
             49.99,
             '2015-01-04',
             '2015-01-01T00:00:00-02:00',
-            new Date('2014-12-31T22:00:00')
+            new Date('2014-12-31T22:00:00-03:00')
           ]
         )
       })
@@ -572,7 +572,7 @@ describe('postgres cr layer', function() {
           '2014-12-31T00:00:00.000Z'
         )
         expect(record.updatedat.toISOString()).to.equal(
-          new Date('2014-12-31T00:00:00').toISOString()
+          new Date('2014-12-31T00:00:00-03:00').toISOString()
         )
         record = recordset[1]
         expect(record.lastsale).to.equal('2015-01-01')
@@ -580,7 +580,7 @@ describe('postgres cr layer', function() {
           '2015-01-01T01:00:00.000Z'
         )
         expect(record.updatedat.toISOString()).to.equal(
-          new Date('2014-12-31T23:00:00').toISOString()
+          new Date('2014-12-31T23:00:00-03:00').toISOString()
         )
         record = recordset[2]
         expect(record.lastsale).to.equal('2015-01-02')
@@ -588,7 +588,7 @@ describe('postgres cr layer', function() {
           '2014-12-31T23:00:00.000Z'
         )
         expect(record.updatedat.toISOString()).to.equal(
-          new Date('2015-01-01T01:00:00').toISOString()
+          new Date('2015-01-01T01:00:00-03:00').toISOString()
         )
         record = recordset[3]
         expect(record.lastsale).to.equal('2015-01-03')
@@ -596,7 +596,7 @@ describe('postgres cr layer', function() {
           '2014-12-31T22:00:00.000Z'
         )
         expect(record.updatedat.toISOString()).to.equal(
-          new Date('2015-01-01T02:00:00').toISOString()
+          new Date('2015-01-01T02:00:00-03:00').toISOString()
         )
         record = recordset[4]
         expect(record.lastsale).to.equal('2015-01-04')
@@ -604,7 +604,7 @@ describe('postgres cr layer', function() {
           '2015-01-01T02:00:00.000Z'
         )
         expect(record.updatedat.toISOString()).to.equal(
-          new Date('2014-12-31T22:00:00').toISOString()
+          new Date('2014-12-31T22:00:00-03:00').toISOString()
         )
         record = recordset[5]
         expect(record.lastsale).to.equal(now.toISOString().substr(0, 10))
@@ -665,7 +665,7 @@ describe('postgres cr layer', function() {
       )
       .then(function(recordset) {
         expect(recordset).to.be.a('array')
-        expect(recordset.length).to.equal(4)
+        expect(recordset.length).to.equal(5)
         var record = recordset[0]
         expect(record.updatedat.toISOString()).to.equal(
           '2015-01-01T01:00:00.000Z'
