@@ -1,6 +1,6 @@
 {
   "name": "pg-cr-layer",
-  "version": "2.0.22",
+  "version": "2.0.23",
   "description": "A postgres interface layer for common requests",
   "repository": "https://github.com/andrglo/pg-cr-layer.git",
   "author": {
@@ -21,15 +21,12 @@
   ],
   "devDependencies": {
     "chai": "^5.1.1",
-    "coveralls": "^3.1.1",
-    "eslint": "^9.10.0",
+    "eslint": "^9.11.1",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^10.7.3",
-    "nyc": "^17.1.0"
+    "mocha": "^10.7.3"
   },
   "scripts": {
-    "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
-    "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
+    "test": "mocha --bail --exit --timeout 15000 test/index.js",
     "ssh": "docker exec -it pg-cr-layer-dms-1 fish"
   },
   "license": "MIT",
