@@ -20,10 +20,10 @@
     "interface"
   ],
   "devDependencies": {
-    "chai": "^5.2.0",
-    "eslint": "^9.22.0",
+    "chai": "^6.2.1",
+    "eslint": "^9.39.1",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^11.1.0"
+    "mocha": "^11.7.5"
   },
   "scripts": {
     "test": "mocha --bail --exit --timeout 15000 test/index.js",
@@ -31,7 +31,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "debug": "^4.4.0",
-    "pg": "^8.14.0"
+    "debug": "^4.4.3",
+    "pg": "^8.16.3"
   }
 }

@@ -1,7 +1,7 @@
 services:
 
   dms:
-    image: andrglo/everest:20.17.0
+    image: andrglo/everest:22.21.1
     hostname: pg-cr-layer
     container_name: pg-cr-layer-dms-1
     command: tail -f /dev/null
