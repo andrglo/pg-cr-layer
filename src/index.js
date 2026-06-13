@@ -7,6 +7,29 @@ const types = pg.types
 types.setTypeParser(1082, val => val)
 types.setTypeParser(1700, val => Number(val))
 
+// Tag a DB error with the SQL + params that produced it, so error-alert
+// consumers can show what actually failed (drivers report code/position/column
+// but never the statement itself). Set-if-absent: the innermost runner wins and
+// outer wrappers never clobber a more specific capture. SQL is truncated so a
+// giant generated statement can't blow past downstream storage caps.
+const MAX_SQL_LENGTH = 4 * 1024
+
+function attachSqlToError(err, sql, params) {
+  if (!err || typeof err !== 'object') {
+    return err
+  }
+  if (err.sql == null && typeof sql === 'string') {
+    err.sql =
+      sql.length > MAX_SQL_LENGTH
+        ? sql.slice(0, MAX_SQL_LENGTH) + ' …(truncated)'
+        : sql
+  }
+  if (err.params == null && params != null) {
+    err.params = params
+  }
+  return err
+}
+
 module.exports = PgCrLayer
 
 /**
@@ -243,7 +266,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
       options.transaction.query(statement, params, function(err, result) {
         if (err) {
           debug('%s %O', statement, err)
-          return reject(err)
+          return reject(attachSqlToError(err, statement, params))
         }
         resolve(
           Array.isArray(result) // multiple statements
@@ -259,7 +282,7 @@ PgCrLayer.prototype.query = function(statement, params, options) {
         this.pool.query(statement, params, function(err, result) {
           if (err) {
             debug('%s %O', statement, err)
-            reject(err)
+            reject(attachSqlToError(err, statement, params))
             return
           }
           resolve(
