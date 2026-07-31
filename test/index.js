@@ -1143,6 +1143,292 @@ describe('postgres cr layer', function() {
         done(error)
       })
   })
+  describe('parameter markers are only recognized in code', function() {
+    before(function() {
+      return layer1.execute(
+        'CREATE TABLE literals ( ' +
+          'id integer, ' +
+          'name varchar(100) )'
+      )
+    })
+    it('should not bind a marker inside a string literal when its name is a key in the params object', function() {
+      return layer1
+        .execute(
+          'INSERT INTO literals (id, name) ' +
+            'VALUES (@id, \'vendas@name.com.br\')',
+          {id: 1, name: 'Cadeira'}
+        )
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [1]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset).to.be.a('array')
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('vendas@name.com.br')
+        })
+    })
+    it('should not bind a marker inside a string literal when its name is not a key in the params object', function() {
+      return layer1
+        .execute(
+          'INSERT INTO literals (id, name) ' +
+            'VALUES (@id, \'contato@ayk.com.br\')',
+          {id: 2}
+        )
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [2]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset).to.be.a('array')
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('contato@ayk.com.br')
+        })
+    })
+    it('should keep a dollar amount inside a string literal and still number the real marker as $1', function() {
+      return layer1
+        .execute(
+          'INSERT INTO literals (id, name) ' +
+            'VALUES (@id, \'Total R$100 a vista\')',
+          {id: 3}
+        )
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [3]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset).to.be.a('array')
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('Total R$100 a vista')
+          // the rewritten statement is attached to a rejected query, so it
+          // can be read back to prove how the marker was numbered
+          return layer1.query(
+            'SELECT no_such_column, \'Total R$100 a vista\' AS a, ' +
+              '@id::int AS b',
+            {id: 3}
+          )
+        })
+        .then(function() {
+          throw new Error('No error?')
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('No error?')).to.equal(-1)
+          expect(error.sql).to.equal(
+            'SELECT no_such_column, \'Total R$100 a vista\' AS a, ' +
+              '$1::int AS b'
+          )
+        })
+    })
+    it('should rewrite each marker at its own position, not at the first matching text', function() {
+      return layer1
+        .query(
+          'SELECT \'contato@nome.com\' AS a, @nome::text AS b',
+          {nome: 'Cadeira'}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal('contato@nome.com')
+          expect(recordset[0].b).to.equal('Cadeira')
+        })
+    })
+    it('should bind the same marker used twice as two positional parameters', function() {
+      return layer1
+        .query('SELECT @v::text AS a, @v::text AS b', {v: 'dois'})
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal('dois')
+          expect(recordset[0].b).to.equal('dois')
+        })
+    })
+    it('should bind several markers in order of appearance', function() {
+      return layer1
+        .query(
+          'SELECT @first::text AS a, @second::text AS b, ' +
+            '@third::text AS c',
+          {first: 'um', second: 'dois', third: 'tres'}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal('um')
+          expect(recordset[0].b).to.equal('dois')
+          expect(recordset[0].c).to.equal('tres')
+        })
+    })
+    it('should pass array parameters straight through, literals untouched', function() {
+      return layer1
+        .query('SELECT $1::text AS a, \'x@name.com\' AS b', ['v'])
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal('v')
+          expect(recordset[0].b).to.equal('x@name.com')
+        })
+    })
+    it('should not end a string literal at a doubled quote nor bind the marker inside it', function() {
+      return layer1
+        .execute(
+          'INSERT INTO literals (id, name) ' +
+            'VALUES (@id, \'it\'\'s R@name\')',
+          {id: 4, name: 'Cadeira'}
+        )
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [4]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('it\'s R@name')
+        })
+    })
+    it('should bind a marker placed right after a string literal closes', function() {
+      return layer1
+        .query('SELECT \'R$9\' AS a, @id::int AS b', {id: 5})
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal('R$9')
+          expect(recordset[0].b).to.equal(5)
+        })
+    })
+    it('should not bind a marker inside a line comment', function() {
+      return layer1
+        .query('SELECT @id::int AS a -- not a param @id\n', {id: 6})
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal(6)
+        })
+    })
+    it('should not bind a marker inside a nested block comment', function() {
+      return layer1
+        .query('SELECT @id::int AS a /* a /* b @id */ c @id */', {id: 7})
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal(7)
+        })
+    })
+    it('should not bind a marker inside a double quoted identifier', function() {
+      return layer1
+        .query(
+          'SELECT @id::int AS a, 1 AS "e@id mail", ' +
+            '2 AS "qu""ote @id"',
+          {id: 8}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          var record = recordset[0]
+          expect(record.a).to.equal(8)
+          expect(record['e@id mail']).to.equal(1)
+          expect(record['qu"ote @id']).to.equal(2)
+        })
+    })
+    it('should not bind a marker inside a dollar quoted string', function() {
+      return layer1
+        .query(
+          'SELECT @id::int AS a, $$mail @name here$$::text AS b',
+          {id: 9, name: 'Cadeira'}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal(9)
+          expect(recordset[0].b).to.equal('mail @name here')
+        })
+    })
+    it('should not bind a marker inside a tagged dollar quoted string', function() {
+      return layer1
+        .query(
+          'SELECT @id::int AS a, ' +
+            '$body$mail @name here$body$::text AS b',
+          {id: 10, name: 'Cadeira'}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].a).to.equal(10)
+          expect(recordset[0].b).to.equal('mail @name here')
+        })
+    })
+    it('should not take a positional $1 as a dollar quote opener', function() {
+      // a dollar quote tag cannot start with a digit, so $1 must not open
+      // one - if it did, everything up to the next $...$ would be swallowed
+      // and the marker in between would never be seen
+      const scanMarkers = require('../src/scan-markers')
+      let markers = scanMarkers(
+        'SELECT $1 AS a, @real::text AS b, $1 AS c'
+      )
+      expect(markers.length).to.equal(1)
+      expect(markers[0].name).to.equal('real')
+      markers = scanMarkers(
+        'SELECT $1$ AS a, @real::text AS b, $1$ AS c'
+      )
+      expect(markers.length).to.equal(1)
+      expect(markers[0].name).to.equal('real')
+    })
+    it('should not end an E string at a backslash escaped quote nor bind the marker inside it', function() {
+      return layer1
+        .execute(
+          'INSERT INTO literals (id, name) ' +
+            'VALUES (@id, E\'it\\\'s @name\')',
+          {id: 11, name: 'Cadeira'}
+        )
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [11]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('it\'s @name')
+        })
+        .then(function() {
+          // both escapes at once: only handling one of them closes the
+          // literal early and puts the marker back in code
+          return layer1.execute(
+            'INSERT INTO literals (id, name) ' +
+              'VALUES (@id, E\'a\'\'\\\'@name\')',
+            {id: 12, name: 'Cadeira'}
+          )
+        })
+        .then(function() {
+          return layer1.query(
+            'SELECT name FROM literals WHERE id = $1',
+            [12]
+          )
+        })
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].name).to.equal('a\'\'@name')
+        })
+    })
+    it('should not take a bare at sign operator as a marker', function() {
+      // postgres has real operators spelled with a bare @ (@>, <@, @@, @-@);
+      // the sigil must be followed by at least one word character to be a
+      // marker, or a containment expression like `a @> b` gets read as a
+      // zero-length marker named '', which then mis-numbers every real
+      // marker that follows it
+      const scanMarkers = require('../src/scan-markers')
+      const markers = scanMarkers('SELECT a @> b, @id::int AS x')
+      expect(markers.length).to.equal(1)
+      expect(markers[0].name).to.equal('id')
+      expect(markers[0].index).to.equal(15)
+      return layer1
+        .query(
+          'SELECT ARRAY[1,2] @> ARRAY[1] AS contains, @id::int AS id',
+          {id: 7}
+        )
+        .then(function(recordset) {
+          expect(recordset.length).to.equal(1)
+          expect(recordset[0].contains).to.equal(true)
+          expect(recordset[0].id).to.equal(7)
+        })
+    })
+  })
+
   after(function() {
     return layer0
       .close()

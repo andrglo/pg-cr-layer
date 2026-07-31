@@ -1,6 +1,7 @@
 let pg = require('pg')
 const assert = require('assert')
 const debug = require('debug')('layer:pg')
+const scanMarkers = require('./scan-markers')
 
 const types = pg.types
 
@@ -235,23 +236,29 @@ PgCrLayer.prototype.query = function(statement, params, options) {
   var convertParams = function() {
     if (params && params !== null) {
       if (typeof params === 'object' && !Array.isArray(params)) {
-        var match = statement.match(/(@\w*\b)/g)
-        var i = 1
-        params = match
-          ? match.map(function(param) {
-            statement = statement.replace(param, '$' + i)
-            i++
-            var key = param.substr(1)
-            // presence, not truthiness: 0, '', false and null are legitimate
-            // parameter values. hasOwnProperty, not the in operator, so an
-            // inherited key like toString cannot be bound as a parameter
-            assert(
-              Object.prototype.hasOwnProperty.call(params, key),
-              'Parameter ' + param + ' not found in object params'
-            )
-            return params[key]
-          })
-          : []
+        // only the markers the scan found in code are parameters, and each
+        // one is rewritten at its own position: replacing by token text
+        // would hit the first occurrence anywhere in the statement
+        var markers = scanMarkers(statement)
+        var values = []
+        var rewritten = ''
+        var last = 0
+        markers.forEach(function(marker, index) {
+          var key = marker.name
+          rewritten +=
+            statement.slice(last, marker.index) + '$' + (index + 1)
+          last = marker.index + marker.length
+          // presence, not truthiness: 0, '', false and null are legitimate
+          // parameter values. hasOwnProperty, not the in operator, so an
+          // inherited key like toString cannot be bound as a parameter
+          assert(
+            Object.prototype.hasOwnProperty.call(params, key),
+            'Parameter ' + '@' + key + ' not found in object params'
+          )
+          values.push(params[key])
+        })
+        statement = rewritten + statement.slice(last)
+        params = values
       }
       params = params.map(function(param) {
         if (typeof param === 'object' && !(param instanceof Date)) {
