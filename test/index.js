@@ -356,6 +356,86 @@ describe('postgres cr layer', function() {
   it('should wrap a identifier with double quotes', function() {
     expect(layer0.wrap('abc')).to.equal('"abc"')
   })
+  it('should escape a double quote inside a identifier', function() {
+    expect(layer0.wrap('we"ird')).to.equal('"we""ird"')
+  })
+  it('should not let a identifier break out of the delimiters', function() {
+    expect(
+      layer0.wrap('x" FROM films; DROP TABLE films --')
+    ).to.equal('"x"" FROM films; DROP TABLE films --"')
+  })
+  it('should reject a identifier that is not a string', function() {
+    expect(function() {
+      return layer0.wrap(1)
+    }).to.throw('Invalid identifier')
+    expect(function() {
+      return layer0.wrap(null)
+    }).to.throw('Invalid identifier')
+    expect(function() {
+      return layer0.wrap(void 0)
+    }).to.throw('Invalid identifier')
+    expect(function() {
+      return layer0.wrap({
+        toString: function() {
+          return 'abc'
+        }
+      })
+    }).to.throw('Invalid identifier')
+  })
+  it('should reject a identifier containing a NUL character', function() {
+    expect(function() {
+      return layer0.wrap('a\0b')
+    }).to.throw('Invalid identifier')
+  })
+  it('should select a column whose name contains a double quote', function() {
+    const column = 'we"ird'
+    return layer0
+      .execute(
+        'CREATE TABLE odd_identifiers (' +
+          layer0.wrap(column) +
+          ' varchar(10))'
+      )
+      .then(function() {
+        return layer0.execute(
+          'INSERT INTO odd_identifiers VALUES ($1)',
+          ['ok']
+        )
+      })
+      .then(function() {
+        return layer0.query(
+          'SELECT ' + layer0.wrap(column) + ' FROM odd_identifiers'
+        )
+      })
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array')
+        expect(recordset.length).to.equal(1)
+        expect(recordset[0][column]).to.equal('ok')
+      })
+  })
+  it('should not run sql injected through a wrapped identifier', function() {
+    return layer0
+      .query(
+        'SELECT ' +
+          layer0.wrap(
+            'x" FROM odd_identifiers; DROP TABLE odd_identifiers --'
+          ) +
+          ' FROM odd_identifiers'
+      )
+      .then(function() {
+        throw new Error('The server accepted?')
+      })
+      .catch(function(error) {
+        expect(error.message.indexOf('does not exist') !== -1).to.equal(
+          true
+        )
+      })
+      .then(function() {
+        return layer0.query('SELECT * FROM odd_identifiers')
+      })
+      .then(function(recordset) {
+        expect(recordset.length).to.equal(1)
+      })
+  })
   it('should have postgres as dialect', function() {
     expect(layer0.dialect).to.equal('postgres')
   })

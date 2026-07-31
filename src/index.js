@@ -305,10 +305,26 @@ PgCrLayer.prototype.close = function() {
 }
 
 /**
- * Wrap the identifier within the appropriate delimiters
+ * Wrap the identifier within the appropriate delimiters, escaping the
+ * closing delimiter by doubling it - the standard SQL escape - so an
+ * identifier holding a delimiter cannot close the quoted context and
+ * append arbitrary SQL. A NUL character cannot be escaped by any
+ * delimiter style, so it is rejected, as is a non string identifier
  * @param identifier {string}
  * @return identifier {string}
  */
 PgCrLayer.prototype.wrap = function(identifier) {
-  return this.delimiters[0] + identifier + this.delimiters[1]
+  if (typeof identifier !== 'string') {
+    throw new Error(
+      'Invalid identifier: a string is expected, got ' + typeof identifier
+    )
+  }
+  if (identifier.indexOf('\0') !== -1) {
+    throw new Error(
+      'Invalid identifier: the NUL character is not allowed'
+    )
+  }
+  const open = this.delimiters[0]
+  const close = this.delimiters[1]
+  return open + identifier.split(close).join(close + close) + close
 }
