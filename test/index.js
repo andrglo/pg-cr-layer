@@ -436,6 +436,50 @@ describe('postgres cr layer', function() {
         expect(recordset.length).to.equal(1)
       })
   })
+  it('should refuse to wrap when delimiters are not two characters', function() {
+    const attack = 'x" FROM films; DROP TABLE films --'
+    const oneChar = Object.create(PgCrLayer.prototype)
+    oneChar.delimiters = '"'
+    let rendered = null
+    let thrown = null
+    try {
+      rendered = oneChar.wrap(attack)
+    } catch (error) {
+      thrown = error
+    }
+    expect(rendered).to.equal(null) // the break out was never rendered
+    expect(thrown).to.be.a('error')
+    expect(thrown.message.indexOf('Invalid delimiters') !== -1).to.equal(true)
+    const notAString = Object.create(PgCrLayer.prototype)
+    notAString.delimiters = [
+      '"',
+      {
+        [Symbol.split]: function(identifier) {
+          return [identifier]
+        },
+        toString: function() {
+          return '"'
+        }
+      }
+    ]
+    rendered = null
+    thrown = null
+    try {
+      rendered = notAString.wrap(attack)
+    } catch (error) {
+      thrown = error
+    }
+    expect(rendered).to.equal(null) // the break out was never rendered
+    expect(thrown).to.be.a('error')
+    expect(thrown.message.indexOf('Invalid delimiters') !== -1).to.equal(true)
+  })
+  it('should escape with any two character delimiters', function() {
+    expect(layer0.wrap('we"ird')).to.equal('"we""ird"')
+    const backticks = Object.create(PgCrLayer.prototype)
+    backticks.delimiters = '``'
+    expect(backticks.wrap('we`ird')).to.equal('`we``ird`')
+    expect(backticks.wrap('abc')).to.equal('`abc`')
+  })
   it('should have postgres as dialect', function() {
     expect(layer0.dialect).to.equal('postgres')
   })
@@ -523,6 +567,37 @@ describe('postgres cr layer', function() {
         done()
       })
       .catch(done)
+  })
+  it('should accept falsy object parameters in layer 1', function() {
+    return layer1
+      .query(
+        'SELECT @zero::int AS zero, @empty::text AS empty, ' +
+          '@untrue::boolean AS untrue, @nothing::text AS nothing',
+        {zero: 0, empty: '', untrue: false, nothing: null}
+      )
+      .then(function(recordset) {
+        expect(recordset).to.be.a('array')
+        expect(recordset.length).to.equal(1)
+        var record = recordset[0]
+        expect(record.zero).to.equal(0)
+        expect(record.empty).to.equal('')
+        expect(record.untrue).to.equal(false)
+        expect(record.nothing).to.equal(null)
+      })
+  })
+  it('should reject a object parameter not informed in layer 1', function() {
+    return layer1
+      .query('SELECT @informed::int AS informed, @missing::int AS missing', {
+        informed: 0
+      })
+      .then(function() {
+        throw new Error('No error?')
+      })
+      .catch(function(error) {
+        expect(
+          error.message.indexOf('@missing not found') !== -1
+        ).to.equal(true)
+      })
   })
   it('should attach sql and params to a rejected query error in layer 1', function() {
     return layer1
