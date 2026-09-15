@@ -67,7 +67,12 @@ jobs:
               echo " => Not publishing"
             else
               echo " => Will publish"
-              npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+              NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
+              if [ -z "$NPM_ID_TOKEN" ]; then
+                echo "No OIDC token from CircleCI - check the npm trusted publisher setup" >&2
+                exit 1
+              fi
+              export NPM_ID_TOKEN
               npm publish
             fi
 
